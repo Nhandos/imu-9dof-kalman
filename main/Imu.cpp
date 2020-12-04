@@ -30,52 +30,36 @@ static void printFormattedFloat(float val, uint8_t leading, uint8_t decimals){
   }
 }
 
-
 void IMU::init(int max_attempts)
 {
-    bool initialised = false;
-    int n_attempts = 0;
+  #ifdef USE_SPI
+      SPI_PORT.begin();
+  #else
+      WIRE_PORT.begin();
+      WIRE_PORT.setClock(400000);
+  #endif
+    
+    bool initialized = false;
+    while( !initialized ){
 
-#ifdef USE_SPI
-    SPI_PORT.begin()
-#else
-    WIRE_PORT.begin();
-    WIRE_PORT.setClock(400000);  // 400 kHZ I2C
-#endif
+  #ifdef USE_SPI
+      icm20948.begin( CS_PIN, SPI_PORT, SPI_FREQ ); // Here we are using the user-defined SPI_FREQ as the clock speed of the SPI bus 
+  #else
+      icm20948.begin( WIRE_PORT, AD0_VAL );
+  #endif
 
-
-    /* ---------- Connect to sensor ----------*/
-    SERIAL_PORT.println("Attempting to initialise icm20948...");
-    while (!initialised && n_attempts < max_attempts)  
-    {
-#ifdef USE_SPI
-        icm20948.begin(CS_PIN, SPI_PORT, SPI_FREQ);
-#else
-        icm20948.begin(WIRE_PORT, AD0_VAL);
-#endif
-        is_connected = true;
-
-        SERIAL_PORT.print(F("Initialisation of icm20948 returned: "));
-        SERIAL_PORT.println(icm20948.statusString());
-        if (icm20948.status != ICM_20948_Stat_Ok)
-        {
-            SERIAL_PORT.println("Trying again...");
-            delay(500);
-            n_attempts += 1;
-        }else{
-            initialised = true;
-        }
-    } 
-
-    // Exit if fail to connect
-    if (!initialised)
-    {
-        SERIAL_PORT.println("Fatal: Failed to initialised icm20948. Exiting...");
-        SERIAL_PORT.flush();  // Waits for the transmission of outgoing serial data to complete
-        exit(-1);
+      SERIAL_PORT.print( F("Initialization of the sensor returned: ") );
+      SERIAL_PORT.println( icm20948.statusString() );
+      if( icm20948.status != ICM_20948_Stat_Ok ){
+        SERIAL_PORT.println( "Trying again..." );
+        delay(500);
+      }else{
+        initialized = true;
+      }
     }
 
-    SERIAL_PORT.println("icm20948 connected!");
+    // In this advanced example we'll cover how to do a more fine-grained setup of your sensor
+    SERIAL_PORT.println("Device connected!");
 
     // Here we are doing a SW reset to make sure the device starts in a known state
     icm20948.swReset( );
@@ -89,13 +73,20 @@ void IMU::init(int max_attempts)
     icm20948.sleep( false );
     icm20948.lowPower( false );
 
+    // Restart magnetometer because magnetometer may stop working after reset
+    icm20948.startupMagnetometer();
+    if( icm20948.status != ICM_20948_Stat_Ok){
+      SERIAL_PORT.print(F("Startup magnetometer returned: "));
+      SERIAL_PORT.println(icm20948.statusString());
+    }
+
+
     // The next few configuration functions accept a bit-mask of sensors for which the settings should be applied.
 
     // Set Gyro and Accelerometer to a particular sample mode
     // options: ICM_20948_Sample_Mode_Continuous
     //          ICM_20948_Sample_Mode_Cycled
-    icm20948.setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr),        
-                           ICM_20948_Sample_Mode_Continuous ); 
+    icm20948.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous ); 
     if( icm20948.status != ICM_20948_Stat_Ok){
       SERIAL_PORT.print(F("setSampleMode returned: "));
       SERIAL_PORT.println(icm20948.statusString());

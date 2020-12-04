@@ -3,10 +3,9 @@
 
 #include <ICM_20948.h>
 
-#define STR_3_AXIS(MEAS) "[ " + String(MEAS.x, 2) + "," + String(MEAS.y, 2) + "," + String(MEAS.z,2) + " ] "
-#define SERIAL_PORT Serial
+// #define USE_SPI  
 
-// #define USE_SPI
+#define SERIAL_PORT Serial
 
 // SPI Physical Hookup
 #define SPI_PORT SPI  // MOSI
@@ -53,6 +52,7 @@ typedef struct t_temp
     float temp;
     unsigned long t;
 } Temperature;
+
 
 class IMU
 {

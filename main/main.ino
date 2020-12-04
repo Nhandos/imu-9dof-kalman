@@ -6,6 +6,7 @@ IMU imu;
 void setup()
 {
     SERIAL_PORT.begin(115200);
+    while(!SERIAL_PORT){};  // Block until serial port becomes available
     imu.init(IMU_CONNECT_MAX_ATTEMPS);
 }
  
