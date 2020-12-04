@@ -12,5 +12,8 @@ void setup()
 void loop()
 {
     imu.update();
-    SERIAL_PORT.println(imu.str_repr());
+
+    delay(1000);  // delay for debugging
+
+    imu.log_data();
 }

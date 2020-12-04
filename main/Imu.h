@@ -3,7 +3,7 @@
 
 #include <ICM_20948.h>
 
-#define STR_3_AXIS(MEAS) "[ " + String(MEAS.x, 2) + "," + String(MEAS.y, 2) + "," + String(MEAS.z,2) + " ]"
+#define STR_3_AXIS(MEAS) "[ " + String(MEAS.x, 2) + "," + String(MEAS.y, 2) + "," + String(MEAS.z,2) + " ] "
 #define SERIAL_PORT Serial
 
 // #define USE_SPI
@@ -26,6 +26,7 @@ typedef struct t_accel
     float x;
     float y;
     float z;
+    unsigned long t;
 } Accelerometer;
 
 
@@ -34,6 +35,7 @@ typedef struct t_gyro
     float x;
     float y;
     float z;
+    unsigned long t;
 } Gyroscope;
 
 
@@ -42,17 +44,21 @@ typedef struct t_magn
     float x;
     float y;
     float z;
+    unsigned long t;
 } Magnetometer;
+
+
+typedef struct t_temp
+{
+    float temp;
+    unsigned long t;
+} Temperature;
 
 class IMU
 {
     private:
         bool is_connected;
         unsigned long last_alive_time;
-        Accelerometer acc;
-        Gyroscope gyr;
-        Magnetometer mag; 
-        float temp;  // temperature
 #ifdef USE_SPI
         ICM_20948_SPI icm20948;
 #else    
@@ -60,9 +66,19 @@ class IMU
 #endif
 
     public:
-        IMU() : is_connected(false), last_alive_time(0){}  // Constructor
+        // Constructors
+        IMU() : is_connected(false), last_alive_time(0){}  
+
+        // Class Fields
+        Accelerometer acc;
+        Gyroscope gyr;
+        Magnetometer mag; 
+        Temperature temp;
+
+        // Methods
         void init(int max_attempts);  //initialise device
         bool isConnected(void);  // check if device is connected
+        void log_data(void);  // log current measurements
         String str_repr(void);  // return string representation of device
         void update(void);  // update device state/measurements
 };
